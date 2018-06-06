@@ -173,7 +173,8 @@ class DDIClient(object):
 
     async def get_binary_resource(self, api_path, dl_location,
                                   mime='application/octet-stream',
-                                  chunk_size=512, timeout=3600, **kwargs):
+                                  chunk_size_bytes=512 * 1000,
+                                  timeout=3600, **kwargs):
         """
         Helper method for binary HTTP GET API requests.
 
@@ -196,11 +197,12 @@ class DDIClient(object):
                     tenant=self.tenant,
                     controllerId=self.controller_id,
                     **kwargs))
-        return await self.get_binary(url, dl_location, mime, chunk_size,
+        return await self.get_binary(url, dl_location, mime, chunk_size_bytes,
                                      timeout=timeout)
 
     async def get_binary(self, url, dl_location,
-                         mime='application/octet-stream', chunk_size=512,
+                         mime='application/octet-stream',
+                         chunk_size_bytes=512 * 1000,
                          timeout=3600):
         """
         Actual download method with checksum checking.
@@ -211,9 +213,10 @@ class DDIClient(object):
         Keyword Args:
             mime: mimetype of content to retrieve
                   (default: 'application/octet-stream')
-            chunk_size: size of chunk to retrieve
+            chunk_size_bytes: size of chunk to retrieve, in bytes
+                  (default 512kb)
             timeout: download timeout
-                     (default: 3600)
+                  (default: 3600)
 
         Returns:
             MD5 hash of downloaded content
@@ -231,7 +234,7 @@ class DDIClient(object):
                 with open(dl_location, 'wb') as fd:
                     while True:
                         with aiohttp.Timeout(60):
-                            chunk = await resp.content.read(chunk_size)
+                            chunk = await resp.content.read(chunk_size_bytes)
                             if not chunk:
                                 break
                             fd.write(chunk)
